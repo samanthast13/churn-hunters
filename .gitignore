@@ -1,2 +1,3 @@
 data/*.csv
 data/*.png
+model/*.pkl
