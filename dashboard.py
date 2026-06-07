@@ -324,28 +324,114 @@ elif pagina == "Análisis exploratorio":
 
     # Evolución mensual — área con gradiente, más rica
     st.markdown('<div class="card"><div class="card-header"><span class="card-title">Evolución mensual del churn</span><span class="card-badge badge-info">Serie de tiempo</span></div>', unsafe_allow_html=True)
+    meses_names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+    def fmt_mes(m):
+        s = str(int(m)); y,mo = s[:4],int(s[4:])
+        return f"{meses_names[mo-1]} {y}"
+    mes_f = mes.iloc[1:].copy()
+    mes_f['label'] = mes_f['calmonth'].apply(fmt_mes)
+    media = (mes_f['target']*100).mean()
+
     fig_mes = go.Figure()
     fig_mes.add_trace(go.Scatter(
-        x=mes['calmonth'], y=(mes['target']*100).round(2),
+        x=mes_f['label'], y=(mes_f['target']*100).round(2),
         mode='lines+markers',
         line=dict(color='#B00000', width=3, shape='spline'),
-        marker=dict(size=7, color='white', line=dict(color='#B00000', width=2.5)),
+        marker=dict(size=6, color='white', line=dict(color='#B00000', width=2.5)),
         fill='tozeroy',
         fillcolor='rgba(176,0,0,0.1)',
         hovertemplate='<b>%{x}</b><br>Churn: %{y:.2f}%<extra></extra>',
         name=''
     ))
-    # Línea de media
-    media = (mes['target']*100).mean()
     fig_mes.add_hline(y=media, line_dash='dot', line_color='#d97706', line_width=1.5,
         annotation_text=f"Media: {media:.2f}%", annotation_position="right",
         annotation_font=dict(size=10, color='#d97706'))
     fig_mes.update_layout(**BL, height=220,
-        xaxis=dict(**NOGRID, tickangle=45, tickfont=dict(size=10, color='#6b7280')),
+        xaxis=dict(**NOGRID, tickangle=45, tickfont=dict(size=10, color='#6b7280'), type='category'),
         yaxis=dict(**GRID, title='% Churn', tickfont=dict(size=10, color='#6b7280'), ticksuffix='%'),
         hovermode='x unified')
     st.plotly_chart(fig_mes, use_container_width=True, config={'displayModeBar':False})
     st.markdown('<p class="nota">El churn se mantiene estable entre <strong>0.8% y 1.1%</strong>. La línea punteada indica la media. No hay estacionalidad marcada — el riesgo requiere monitoreo mensual continuo.</p>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+    # ── Mapa coroplético México ──
+    import json as _json
+    TERR_ESTADO = {
+        'Aguascalientes':   'Aguascalientes',
+        'Zacatecas':        'Zacatecas',
+        'Mesa Central':     'Guanajuato',
+        'San Luis Potosi':  'San Luis Potosí',
+        'Durango':          'Durango',
+        'Hermosillo':       'Sonora',
+        'Mexicali':         'Baja California',
+        'Obregon':          'Sonora',
+        'Culiacan':         'Sinaloa',
+        'La Paz':           'Baja California Sur',
+        'Mazatlan':         'Sinaloa',
+        'Monterrey':        'Nuevo León',
+        'Nuevo Leon':       'Nuevo León',
+        'Matamoros':        'Tamaulipas',
+        'Reynosa':          'Tamaulipas',
+        'Laredo':           'Tamaulipas',
+        'Piedras negras':   'Coahuila',
+        'Monclova':         'Coahuila',
+        'Saltillo':         'Coahuila',
+        'Comarca Lagunera': 'Coahuila',
+        'Delicias':         'Chihuahua',
+        'Chihuahua':        'Chihuahua',
+        'Juarez':           'Chihuahua',
+        'Jalisco':          'Jalisco',
+        'Guadalajara':      'Jalisco',
+    }
+    with open('/Users/samanthaabigailsaucedatrevino/hackathon-churn/assets/mexico.geojson') as f:
+        mx_geojson = _json.load(f)
+    # Ver qué nombre tiene la propiedad del estado
+    _name_key = 'name'
+
+    terr_churn = terr.copy()
+    terr_churn['estado'] = terr_churn['Territorio'].map(lambda t: TERR_ESTADO.get(t, t))
+    terr_churn['churn_pct'] = (terr_churn['Churn']*100).round(2)
+    # Agrupar por estado
+    estado_df = terr_churn.groupby('estado').agg(
+        churn_pct=('churn_pct','mean'),
+        territorios=('Territorio', lambda x: ', '.join(x))
+    ).reset_index()
+    estado_df['churn_pct'] = estado_df['churn_pct'].round(2)
+    estado_df['texto'] = estado_df.apply(
+        lambda r: f"<b>{r['estado']}</b><br>Churn promedio: {r['churn_pct']}%<br>Territorios: {r['territorios']}", axis=1)
+
+    fig_mapa = go.Figure(go.Choropleth(
+        geojson=mx_geojson,
+        featureidkey='properties.name',
+        locations=estado_df['estado'],
+        z=estado_df['churn_pct'],
+        text=estado_df['texto'],
+        hoverinfo='text',
+        colorscale=[[0,'#f0fdf4'],[0.35,'#fef9c3'],[0.65,'#fecaca'],[1,'#B00000']],
+        marker_line_color='white', marker_line_width=1,
+        colorbar=dict(
+            title=dict(text='% Churn', font=dict(size=11, color='#374151')),
+            tickfont=dict(size=10, color='#374151'),
+            thickness=12, len=0.7, ticksuffix='%'
+        ),
+        zmin=0, zmax=estado_df['churn_pct'].max()
+    ))
+    fig_mapa.update_geos(
+        visible=False,
+        fitbounds='locations',
+        bgcolor='white'
+    )
+    fig_mapa.update_layout(
+        plot_bgcolor='white', paper_bgcolor='white',
+        font=FONT, height=440,
+        margin=dict(l=0,r=0,t=0,b=0),
+        hoverlabel=dict(bgcolor='#0f1115', font_size=12, font_family='Inter', font_color='white', bordercolor='#0f1115'),
+        geo=dict(bgcolor='white')
+    )
+    st.markdown('<div class="card"><div class="card-header"><span class="card-title">Churn por estado · Mapa de México</span><span class="card-badge badge-warn">Hover para detalle</span></div>', unsafe_allow_html=True)
+    st.plotly_chart(fig_mapa, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('<p class="nota">El mapa muestra el churn rate promedio por estado. Varios territorios operativos pueden pertenecer al mismo estado.</p>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     col_a, col_b = st.columns(2)
@@ -593,8 +679,7 @@ elif pagina == "Análisis individual":
 
             if proba > 0.4:
                 st.markdown('<div class="card"><div class="card-header"><span class="card-title">Llamada de reenganche · Automatizada</span><span class="card-badge badge-danger">Activada</span></div><div class="card-body">', unsafe_allow_html=True)
-                audio_path = f"/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/llamada_{risk_level_raw}.mp3"
-                st.audio(audio_path)
+                st.audio("/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/llamada_cliente.mp3")
                 st.markdown('</div></div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="card"><div class="card-header"><span class="card-title">Resultado</span></div><div class="card-body" style="text-align:center;padding:60px 20px;"><p style="color:#9ca3af;font-size:13px;letter-spacing:0.5px;">Selecciona un cliente y presiona calcular</p></div></div>', unsafe_allow_html=True)
