@@ -136,7 +136,7 @@ NOGRID = dict(showgrid=False, zeroline=False)
 BL = dict(
     plot_bgcolor='white', paper_bgcolor='white', font=FONT,
     margin=dict(l=0,r=0,t=8,b=0),
-    hoverlabel=dict(bgcolor='white', font_size=12, font_family='Inter')
+    hoverlabel=dict(bgcolor='#0a0c10', font_size=12, font_family='Inter', font_color='white', bordercolor='#0a0c10')
 )
 
 @st.cache_resource
