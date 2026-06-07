@@ -4,8 +4,11 @@ import plotly.graph_objects as go
 import pandas as pd
 import pickle
 import base64
+from pathlib import Path
 from pymongo import MongoClient
 import certifi
+
+BASE_DIR = Path(__file__).parent
 
 st.set_page_config(
     page_title="Churn Intelligence · Arca Continental",
@@ -15,7 +18,7 @@ st.set_page_config(
 
 def get_logo_b64():
     try:
-        with open('/Users/samanthaabigailsaucedatrevino/hackathon-churn/assets/arcacontinental.png', 'rb') as f:
+        with open(BASE_DIR / 'assets' / 'arcacontinental.png', 'rb') as f:
             return base64.b64encode(f.read()).decode()
     except:
         return None
@@ -146,15 +149,15 @@ def get_mongo():
 
 @st.cache_resource
 def get_model():
-    with open('/Users/samanthaabigailsaucedatrevino/hackathon-churn/model/model.pkl','rb') as f:
+    with open(BASE_DIR / 'model' / 'model.pkl', 'rb') as f:
         return pickle.load(f)
 
 @st.cache_data
 def get_clientes():
-    test = pd.read_csv("/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/sales_churn_test.csv")
-    cli = pd.read_csv("/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/Clientes.csv")
-    cool = pd.read_csv("/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/Coolers.csv")
-    sub = pd.read_csv("/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/preds_submission_final.csv")
+    test = pd.read_csv(BASE_DIR / 'data' / 'sales_churn_test.csv')
+    cli = pd.read_csv(BASE_DIR / 'data' / 'Clientes.csv')
+    cool = pd.read_csv(BASE_DIR / 'data' / 'Coolers.csv')
+    sub = pd.read_csv(BASE_DIR / 'data' / 'preds_submission_final.csv')
     cl = cool.sort_values("calmonth").groupby("customer_id").last().reset_index()
     df = test.merge(cli, on="customer_id", how="left").merge(cl[["customer_id","num_coolers","num_doors"]], on="customer_id", how="left")
     df = df.merge(sub[["customer_id","target","risk_level"]], on="customer_id", how="left").fillna(0)
@@ -165,9 +168,9 @@ def get_clientes():
 
 @st.cache_data
 def get_eda():
-    train = pd.read_csv('/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/sales_churn_train.csv')
-    cli = pd.read_csv('/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/Clientes.csv')
-    cool = pd.read_csv('/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/Coolers.csv')
+    train = pd.read_csv(BASE_DIR / 'data' / 'sales_churn_train.csv')
+    cli = pd.read_csv(BASE_DIR / 'data' / 'Clientes.csv')
+    cool = pd.read_csv(BASE_DIR / 'data' / 'Coolers.csv')
     cl = cool.sort_values('calmonth').groupby('customer_id').last().reset_index()
     df = train.merge(cli, on='customer_id', how='left').merge(cl[['customer_id','num_coolers','num_doors']], on='customer_id', how='left').fillna(0)
     ds = df.sort_values(['customer_id','calmonth'])
@@ -384,7 +387,7 @@ elif pagina == "Análisis exploratorio":
         'Jalisco':          'Jalisco',
         'Guadalajara':      'Jalisco',
     }
-    with open('/Users/samanthaabigailsaucedatrevino/hackathon-churn/assets/mexico.geojson') as f:
+    with open(BASE_DIR / 'assets' / 'mexico.geojson') as f:
         mx_geojson = _json.load(f)
     # Ver qué nombre tiene la propiedad del estado
     _name_key = 'name'
@@ -679,7 +682,7 @@ elif pagina == "Análisis individual":
 
             if proba > 0.4:
                 st.markdown('<div class="card"><div class="card-header"><span class="card-title">Llamada de reenganche · Automatizada</span><span class="card-badge badge-danger">Activada</span></div><div class="card-body">', unsafe_allow_html=True)
-                st.audio("/Users/samanthaabigailsaucedatrevino/hackathon-churn/data/llamada_cliente.mp3")
+                st.audio(str(BASE_DIR / 'data' / 'llamada_cliente.mp3'))
                 st.markdown('</div></div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="card"><div class="card-header"><span class="card-title">Resultado</span></div><div class="card-body" style="text-align:center;padding:60px 20px;"><p style="color:#9ca3af;font-size:13px;letter-spacing:0.5px;">Selecciona un cliente y presiona calcular</p></div></div>', unsafe_allow_html=True)
