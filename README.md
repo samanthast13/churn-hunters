@@ -1,7 +1,7 @@
 # Churn Intelligence
 **Hack4Her · Arca Continental · Tec de Monterrey**
 
-Sistema de predicción de riesgo de churn para el canal tradicional de Arca Continental. Identifica qué clientes están en riesgo de dejar de comprar antes de que ocurra y activa automáticamente un protocolo de retención.
+Sistema de predicción de riesgo de churn para el canal tradicional de Arca Continental. Identifica qué clientes están en riesgo de dejar de comprar antes de que ocurra y activa automáticamente un protocolo de retención con llamadas de voz diferenciadas por nivel de riesgo.
 
 ---
 
@@ -31,8 +31,10 @@ hackathon-churn/
 │   ├── model.pkl
 │   └── label_encoder.pkl
 ├── assets/
-│   └── arcacontinental.png
+│   ├── arcacontinental.png
+│   └── mexico.geojson
 ├── exploracion.ipynb
+├── exploracion_borrador.ipynb
 ├── dashboard.py
 └── README.md
 ```
@@ -56,11 +58,11 @@ Abrir y ejecutar `exploracion.ipynb` de arriba a abajo. El notebook está dividi
 
 1. Imports
 2. Carga de datos
-3. Análisis exploratorio (EDA)
+3. Análisis exploratorio (EDA) — 11 análisis incluyendo mapa por territorio
 4. Ingeniería de features
 5. Modelo — Random Forest + SMOTE
 6. Predicciones sobre el set de prueba
-7. Guardar modelo
+7. Guardar modelo y submission
 8. MongoDB + ElevenLabs
 
 Al finalizar se generan:
@@ -81,6 +83,17 @@ Abrir en el navegador: `http://localhost:8501`
 
 ---
 
+## Dashboard — 4 módulos
+
+| Módulo | Contenido |
+|--------|-----------|
+| Vista ejecutiva | KPIs, gauge de riesgo global, top clientes por impacto económico, hallazgos |
+| Análisis exploratorio | 10 gráficas + mapa coroplético de México por churn rate estatal |
+| Análisis individual | Score de riesgo con velocímetro animado, timeline de deterioro, llamada de reenganche |
+| Centro operativo | Protocolo por nivel de riesgo, lista operativa, proyección de recuperación |
+
+---
+
 ## Resultados del modelo
 
 | Métrica | Valor |
@@ -89,6 +102,7 @@ Abrir en el navegador: `http://localhost:8501`
 | Precision (churn) | 0.72 |
 | Recall (churn) | 0.99 |
 | Clientes en riesgo alto | 2,519 |
+| Ingreso en riesgo | $12 MM MXN/mes |
 
 ---
 
